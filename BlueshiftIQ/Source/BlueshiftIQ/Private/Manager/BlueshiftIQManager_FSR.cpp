@@ -1,4 +1,4 @@
-﻿// Copyright (c) Blueshift Interactive Ltd (2025)
+﻿// Copyright (c) Blueshift Interactive Ltd (2026)
 
 #include "Manager/BlueshiftIQManager.h"
 
@@ -8,6 +8,9 @@
 #include "BlueshiftIQUtils.h"
 
 /// FSR includes
+#if WITH_FSR
+#include "FFXFSRSettings.h"
+#endif
 #if WITH_FSR4
 #include "FFXFSR4Settings.h"
 #elif WITH_FSR3
@@ -33,10 +36,12 @@ void UBlueshiftIQManager::UpdateFSREnabled()
 	
 	if (IsFSRSupported())
 	{
-#if WITH_FSR4
+#if WITH_FSR_GENERIC
+		CVarEnableFSR->Set(DesiredUpscaler == EBlueshiftUpscalerMode::FSR);
+#elif WITH_FSR4
 		CVarEnableFSR4->Set(DesiredUpscaler == EBlueshiftUpscalerMode::FSR);
 #elif WITH_FSR3
-		CVarEnableFSR3->Set(UpscalerType == EBlueshiftUpscalerType::FSR);
+		CVarEnableFSR3->Set(DesiredUpscaler == EBlueshiftUpscalerType::FSR);
 #endif
 	}
 #endif
@@ -58,24 +63,42 @@ void UBlueshiftIQManager::ApplyFSRSettings()
 	
 	// Quality Mode
 	FixFSRMode();
-	const int32 OldQualityMode = CVarFSR4QualityMode->GetInt();
-#if WITH_FSR4
+	int32 OldQualityMode = 0;
+	int32 NewQualityMode = 0;
+#if WITH_FSR_GENERIC
+	OldQualityMode = CVarFSRQualityMode->GetInt();
+	CVarFSRQualityMode->Set(FSRMode);
+	NewQualityMode = CVarFSRQualityMode->GetInt();
+#elif WITH_FSR4
+	OldQualityMode = CVarFSR4QualityMode->GetInt();
 	CVarFSR4QualityMode->Set(FSRMode);
+	NewQualityMode = CVarFSR4QualityMode->GetInt();
 #elif WITH_FSR3
+	OldQualityMode = CVarFSR4QualityMode->GetInt();
 	CVarFSR3QualityMode->Set(FSRMode);
+	NewQualityMode = CVarFSR3QualityMode->GetInt();
 #endif
-	UE_LOG(LogBlueshiftImageQuality, Log, TEXT("%hs: FSR Quality Mode changed from %i to %i (desired: %i)"), __FUNCTION__, OldQualityMode, CVarFSR4QualityMode->GetInt(), FSRMode);
+	UE_LOG(LogBlueshiftImageQuality, Log, TEXT("%hs: FSR Quality Mode changed from %i to %i (desired: %i)"), __FUNCTION__, OldQualityMode, NewQualityMode, FSRMode);
 	UE_LOG(LogBlueshiftImageQuality, Log, TEXT("%hs: FSR changed r.ScreenPercentage from %f to %f"), __FUNCTION__, OldScreenPercentage, CVarScreenPercentage->GetFloat());
 
 	// Sharpness
 	FixFSRSharpness();
-	const float OldSharpness = CVarFSR4Sharpness->GetFloat();
-#if WITH_FSR4
+	float OldSharpness = 0.0f;
+	float NewSharpness = 0.0f;
+#if WITH_FSR_GENERIC
+	OldSharpness = CVarFSRSharpness->GetFloat();
+	CVarFSRSharpness->Set(FSRSharpness);
+	NewSharpness = CVarFSRSharpness->GetFloat();
+#elif WITH_FSR4
+	OldSharpness = CVarFSR4Sharpness->GetFloat();
 	CVarFSR4Sharpness->Set(FSRSharpness);
+	NewSharpness = CVarFSR4Sharpness->GetFloat();
 #elif WITH_FSR3
+	OldSharpness = CVarFSR3Sharpness->GetFloat();
 	CVarFSR3Sharpness->Set(FSRSharpness);
+	NewSharpness = CVarFSR3Sharpness->GetFloat();
 #endif
-	UE_LOG(LogBlueshiftImageQuality, Log, TEXT("%hs: FSR Sharpness changed from %f to %f (desired: %f)"), __FUNCTION__, OldSharpness, CVarFSR4Sharpness->GetFloat(), FSRSharpness);
+	UE_LOG(LogBlueshiftImageQuality, Log, TEXT("%hs: FSR Sharpness changed from %f to %f (desired: %f)"), __FUNCTION__, OldSharpness, NewSharpness, FSRSharpness);
 
 	// Frame Interpolation (aka. Frame Gen)
 #if WITH_FSR4 || WITH_FSR3

@@ -80,21 +80,32 @@ public class BlueshiftIQ : ModuleRules
 			PublicDefinitions.Add("WITH_DLSS=0");
 		}
 		
-		// Detect FSR
-		if (BlueshiftIQUtils.DoesPluginExistAndIsEnabled(Target, "FSR4"))
+		// Detect FSR - as of 5.7 the newest FSR plugin does not split its plugin into FSR3/FSR4, just generic "FSR"
+		if (BlueshiftIQUtils.DoesPluginExistAndIsEnabled(Target, "FSR"))
+		{
+			PublicDependencyModuleNames.Add("FFXFSRSettings");
+			PublicDefinitions.Add("WITH_FSR=1");
+			PublicDefinitions.Add("WITH_FSR_GENERIC=1");
+		}
+		// Detect FSR4 - older versions of the plugin
+		else if (BlueshiftIQUtils.DoesPluginExistAndIsEnabled(Target, "FSR4"))
 		{
 			PublicDependencyModuleNames.Add("FFXFSR4Settings");
 			PublicDefinitions.Add("WITH_FSR4=1");
+			PublicDefinitions.Add("WITH_FSR_GENERIC=0");
 		}
+		// Detect FSR3 - older versions of the plugin
 		else if (BlueshiftIQUtils.DoesPluginExistAndIsEnabled(Target, "FSR3"))
 		{
 			PublicDependencyModuleNames.Add("FFXFSR3Settings");
 			PublicDefinitions.Add("WITH_FSR3=1");
+			PublicDefinitions.Add("WITH_FSR_GENERIC=0");
 		}
 		else
 		{
 			PublicDefinitions.Add("WITH_FSR4=0");
 			PublicDefinitions.Add("WITH_FSR3=0");
+			PublicDefinitions.Add("WITH_FSR_GENERIC=0");
 		}
 		
 		// Detect XeSS
