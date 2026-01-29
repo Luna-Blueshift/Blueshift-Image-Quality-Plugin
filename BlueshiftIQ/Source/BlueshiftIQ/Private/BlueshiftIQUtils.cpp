@@ -1,4 +1,4 @@
-﻿// Copyright (c) Blueshift Interactive Ltd (2025)
+﻿// Copyright (c) Blueshift Interactive Ltd (2026)
 
 #include "BlueshiftIQUtils.h"
 
@@ -7,25 +7,17 @@
 
 using namespace Blueshift::IQ;
 
-void Utils::RunOnGameThread(const TFunction<void()>& Func)
+void Utils::RunOnGameThread(const TFunctionRef<void()> Func)
 {
-	if (Func == nullptr)
-	{
-		return;
-	}
-
-	if (IsInGameThread())
+	if (IsInGameThread() || IsInParallelGameThread())
 	{
 		Func();
 	}
 	else
 	{
-		AsyncTask(ENamedThreads::GameThread, [F = Func]()
+		AsyncTask(ENamedThreads::GameThread, [Func]()
 		{
-			if (F != nullptr)
-			{
-				F();
-			}
+			Func();
 		});
 	}
 }
